@@ -10,6 +10,8 @@ The daily lifecyle of data movement in this project is as follows:
 4 - Export the completed dict to a csv file in the shared drive
 5 - Using Google Script language, automate the process of creating a new column in the spreadsheet and populating it from the csv file using the IMPORTRANGE function
 
+![IG_Follower_Diagram](ig_follower_data_capture.jpg)
+
 Day 1:
 Created draft outline of the project and daily lifecycle. Originally wanted to use R for data scraping but python appeared to be an easier solution with regards to available modules
 Spent time becoming reacquainted with python after not using it since graduating university (4 years ago!). Relearned how to read/write to/from csv files.
