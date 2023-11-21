@@ -4,11 +4,6 @@ The aim of this repository is to create a tool to pull follower and engagement d
 A log of progress will be kept here in the README file
 
 The daily lifecyle of data movement in this project is as follows:
-1 - Pull a list of instagram handles, in csv format, from a spreadsheet in a shared drive (ie Google Sheets/Drive)
-2 - Read the csv file into a dict structure with python, making the default value in the key:value pair -1
-3 - Using the instaloader module, populate the values for each key in the dict with the real instagram follower count
-4 - Export the completed dict to a csv file in the shared drive
-5 - Using Google Script language, automate the process of creating a new column in the spreadsheet and populating it from the csv file using the IMPORTRANGE function
 
 ![IG_Follower_Diagram](ig_follower_data_capture.jpg)
 
