@@ -69,12 +69,12 @@ def ig_data_pull():
     # Retrieve existing session so that Instagram IP address check is bypassed
     # If Instagram suspects suspicious activity, they will require a manual verification
     # A new session can be created with the createIGSession function, and Instaloader.save_session(), which creates the dict in the sessionDict variable below
-    USER = "freshaccount4jefe"
-
+    USER = "jefethesecond"
+    SESSION = "session-jefethesecond"
     try:
-        loader = instaloader.Instaloader() 
-        sessionDict = {'csrftoken': '8oMqJquDoM6S8UbMMOwUswTv2SIPLYOP', 'ds_user_id': '62843338333', 'ig_cb': '1', 'ig_did': 'EAD711BE-5F4E-4262-ACF1-D65CB4FC15AA', 'ig_pr': '1', 'ig_vw': '1920', 'mid': 'ZWaQ4AAEAAE-hHODqUdpDkrKtwBj', 'rur': '"EAG\\05462843338333\\0541732756579:01f7a9515a87e7fc4728300da6140e407af968673e431f124e189a108a268326aa9ae5ff"', 's_network': '', 'sessionid': '62843338333%3A2MF68v4jAHiZX6%3A17%3AAYdji0eODACxtkakspjtlHhI_UuO1nAai-SNcGeM2g'}
-        loader.load_session(USER,sessionDict)
+        loader = instaloader.Instaloader()
+        #sessionDict = {'csrftoken': '8oMqJquDoM6S8UbMMOwUswTv2SIPLYOP', 'ds_user_id': '62843338333', 'ig_cb': '1', 'ig_did': 'EAD711BE-5F4E-4262-ACF1-D65CB4FC15AA', 'ig_pr': '1', 'ig_vw': '1920', 'mid': 'ZWaQ4AAEAAE-hHODqUdpDkrKtwBj', 'rur': '"EAG\\05462843338333\\0541732756579:01f7a9515a87e7fc4728300da6140e407af968673e431f124e189a108a268326aa9ae5ff"', 's_network': '', 'sessionid': '62843338333%3A2MF68v4jAHiZX6%3A17%3AAYdji0eODACxtkakspjtlHhI_UuO1nAai-SNcGeM2g'}
+        loader.load_session_from_file(USER,SESSION)
     
     except Exception as e:
         print(f'An error occurred while loading instaloader session: {e}')
