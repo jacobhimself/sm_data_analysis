@@ -1,4 +1,7 @@
-/follower_files/
+/follower_files/*.csv
 cloud_service_account_key.json
-/handle_files/
+/handle_files/*.csv
 session-jefethesecond
+ytApiKey.py
+client_secret.json
+
