@@ -111,7 +111,7 @@ def getIgAccountNames(sheetObject, numAccounts = 100):
     
 
 def getTodaysColumnIndex(sheetObject):
-     # Find column for today's date
+     # Find column number for today's date
     accountRange = "MasterSheet!B1:ZZZ1"
     try:
         result = (
@@ -125,11 +125,40 @@ def getTodaysColumnIndex(sheetObject):
         for row in dates:
             print(row)
         print("column index for today is: " + str(len(dates[0])))
-        return len(dates[0])
+
+        #convert the column index into a string. ie. 49 = "AX"
+        result = ""
+        index = len(dates[0]) + 2
+        while index > 0:
+            index -= 1
+            result = chr(index % 26 + ord('A')) + result
+            index //= 26
+        print(result)
+        return result
+
     except HttpError as error:
         print(f"An error occurred: {error}")
         return error
+
     
+def setMasterSheetDateHeader(sheetObject):
+    todaysColumnIndex = getTodaysColumnIndex(sheetObject)
+    todaysDateHeaderCell = "MasterSheet!" + todaysColumnIndex + "2"
+    body = {
+        'values' : [
+            [dateAsString]
+        ]
+    }
+    try:
+        response = sheetObject.spreadsheets().values().update(
+            spreadsheetId = masterSheetId, 
+            range = todaysDateHeaderCell, 
+            body = body,
+            valueInputOption = 'USER_ENTERED').execute()
+    except HttpError as e:
+        print(e)
+        print("Date not set for " + dateAsString)
+
 
 def main():
         # Get the Google Sheet Object
@@ -144,5 +173,8 @@ def main():
 
         #Get the index for todays column
         getTodaysColumnIndex(googleSheetObject)
+
+        # Set todays date in header row
+        # setMasterSheetDateHeader(googleSheetObject)
 
 main()
