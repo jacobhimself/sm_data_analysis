@@ -53,6 +53,7 @@ clientSecret = "client_secret.json"
 
 keyFileLocation = os.path.dirname(os.path.realpath(__file__)) + '/cloud_service_account_key.json'
 dateAsString = str(date.today())
+todaysColIndex = ""
 # handleFileName = "Handles: " + dateAsString + ".csv"
 # handleFileNamePath =  os.path.dirname(os.path.realpath(__file__)) +  "/handle_files/" + handleFileName 
 # outputCsvFileName = dateAsString + ".csv"
@@ -141,9 +142,9 @@ def getTodaysColumnIndex(sheetObject):
         return error
 
     
-def setMasterSheetDateHeader(sheetObject):
-    todaysColumnIndex = getTodaysColumnIndex(sheetObject)
-    todaysDateHeaderCell = "MasterSheet!" + todaysColumnIndex + "2"
+def setMasterSheetDateHeader(sheetObject, todaysColumn):
+
+    todaysDateHeaderCell = "MasterSheet!" + todaysColumn + "1"
     body = {
         'values' : [
             [dateAsString]
@@ -159,6 +160,24 @@ def setMasterSheetDateHeader(sheetObject):
         print(e)
         print("Date not set for " + dateAsString)
 
+def setFollowerCountFromListPos(listIndex, colIndex, sheetObject, followerCount):
+    rowNum = listIndex + 2
+    cellToUpdate = "MasterSheet!" + colIndex + str(rowNum)
+    body = {
+        'values' : [
+            [int(followerCount)]
+        ]
+    }
+    try:
+        response = sheetObject.spreadsheets().values().update(
+            spreadsheetId = masterSheetId, 
+            range = cellToUpdate, 
+            body = body,
+            valueInputOption = 'RAW').execute()
+    except HttpError as e:
+        print(e)
+
+
 
 def main():
         # Get the Google Sheet Object
@@ -172,9 +191,16 @@ def main():
         igAccounts = getIgAccountNames(googleSheetObject)
 
         #Get the index for todays column
-        getTodaysColumnIndex(googleSheetObject)
+        todaysColIndex = getTodaysColumnIndex(googleSheetObject)
 
         # Set todays date in header row
-        # setMasterSheetDateHeader(googleSheetObject)
+        setMasterSheetDateHeader(googleSheetObject, todaysColIndex)
+
+
+        # Set a value in the sheet
+        setFollowerCountFromListPos(listIndex=0, colIndex=todaysColIndex, sheetObject=googleSheetObject, followerCount = 500)
+
+
+
 
 main()
