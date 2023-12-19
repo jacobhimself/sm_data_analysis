@@ -13,52 +13,19 @@ from googleapiclient.errors import HttpError
 from google.oauth2 import service_account
 from googleapiclient.http import MediaFileUpload
 
-# import os
-
-import google_auth_oauthlib.flow
-import googleapiclient.discovery
-# import googleapiclient.errors
-
 import os.path
-import csv
-from datetime import date, timedelta, timezone
-import instaloader
-import time
-import random
-from datetime import datetime
-# import ytApiKey
-
-import sys
-
-import requests
-
-import isodate
-
-import json
+from datetime import date
 
 
-sharedFolderId = "1LrkxznfjcjB2Gmg180FdPF0U3JHyBV-Z"
-scope = 'https://www.googleapis.com/auth/drive'
-scopeYt = ["https://www.googleapis.com/auth/youtube.force-ssl"]
-# scopeSheets = []
-# youtubeApiKey = ytApiKey.apiKey
-# youtubeApi = "youtube"
-# youtubeApiVersion = "v3"
 
 sheetsApi = "sheets"
 sheetsApiVersion = "v4"
 masterSheetId = "1zyWCq_QgFe8xkCwxULzovpS4LSmIGczoEBZXVCyCKlM"
 
-clientSecret = "client_secret.json"
 
 keyFileLocation = os.path.dirname(os.path.realpath(__file__)) + '/cloud_service_account_key.json'
 dateAsString = str(date.today())
-todaysColIndex = ""
-# handleFileName = "Handles: " + dateAsString + ".csv"
-# handleFileNamePath =  os.path.dirname(os.path.realpath(__file__)) +  "/handle_files/" + handleFileName 
-# outputCsvFileName = dateAsString + ".csv"
-# outputCsvFileNamePath = os.path.dirname(os.path.realpath(__file__))+ "/follower_files/" + outputCsvFileName
-# startFromBeginning = True
+
 
 
 def getGoogleSheet(api_name, api_version, scopes, key_file_location):
