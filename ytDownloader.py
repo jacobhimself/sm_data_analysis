@@ -22,6 +22,7 @@ import ytApiKey
 import requests
 
 import isodate
+import time
 
 
 sharedFolderId = "1LrkxznfjcjB2Gmg180FdPF0U3JHyBV-Z"
@@ -162,13 +163,13 @@ def populateVideoRecordList(searchTermList):
     # For 50 search terms, this should use 7500 out of 10,000 available API credits
     # Searches are worth 100 credits, individual video data is worth 1 credit
     for rider in searchTermList:
-        if count < 2:
+        if count < 15:
             print(count)
             # SEARCH RIDER REQUEST
             URL = "https://www.googleapis.com/youtube/v3/search"
             PARAMS = {
                 "key": youtubeApiKey,
-                "q": str(rider) + "bmx",
+                "q": str(rider) + " bmx",
                 "type":"video",
                 "part":"snippet",
                 "maxResults":50,
@@ -271,6 +272,7 @@ def updateVideoRecordsSheet(firstEmptyRow, sheetObject, newVideoRecords):
         setlastVideoRecordUpdate(riderSheetPos,sheetObject)
         currentRow += 1
         riderSheetPos += 1
+        time.sleep(1.5)
 
 def getFirstEmptyRow(sheetObject, sheetName):
     recordRange = sheetName + "!A1:A"
