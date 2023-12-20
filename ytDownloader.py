@@ -73,25 +73,6 @@ class YtVideoRecord:
             str(self.videoCommentCount)
         )
         return string
-
-        
-
-    # def toString(self):
-    #     return (
-    #         self.videoId + "," +
-    #         self.videoTitle + "," +
-    #         self.rider + "," +
-    #         str(self.publishDate) + "," +
-    #         str(self.captureDate) + "," +
-    #         self.channelId + "," +
-    #         self.channelTitle + "," +
-    #         str(self.videoDuration) + "," +
-    #         self.videoDefinition + "," +
-    #         str(self.videoViewCount) + "," +
-    #         str(self.videoLikeCount) + "," +
-    #         str(self.videoFavoriteCount) + "," +
-    #         str(self.videoCommentCount)
-    #     )
     
     def asList(self):
         return (
@@ -124,57 +105,10 @@ def youtubeSearch(ytConnection, searchParam):
     response = request.execute()
     return response
 
-
-# # Return a service that communicates to Google Drive API
-# def getMyDrive(api_name, api_version, scopes, key_file_location):
-#     # Can be adjusted to access other APIs by adjusting the api_name variable
-
-#     # Args:
-#     #     api_name: The name of the api to connect to.
-#     #     api_version: The api version to connect to.
-#     #     scopes: A list auth scopes to authorize for the application.
-#     #     key_file_location: The path to a valid service account JSON key file.
-
-#     # Get service account credentials to automate Oauth procedure
-#     credentials = service_account.Credentials.from_service_account_file(key_file_location)
-#     scoped_credentials = credentials.with_scopes(scopes)
-
-#     # Build the service object.
-#     service = build(api_name, api_version, credentials=scoped_credentials)
-
-#     return service
-
 def getGoogleSheet(api_name, api_version, scopes, key_file_location):
     creds = service_account.Credentials.from_service_account_file(key_file_location)
     service = build(api_name, api_version, credentials=creds)
     return service
-
-
-
-
-# # Upload the completed handle,follower csv file to Google Drive
-# def uploadCsvFile(serviceObject):
-
-#     file_metadata = {"name": outputCsvFileName, "parents":[sharedFolderId]}
-#     media = MediaFileUpload(outputCsvFileNamePath, mimetype="text/csv", resumable=True)
-#     file = (
-#         serviceObject.files()
-#         .create(body=file_metadata, media_body=media, fields="id")
-#         .execute()
-#     )
-
-# def writeToLogFile(message):
-#     currentDateTime = datetime.now()
-#     # formattedDateTime = currentDateTime.strftime('%Y-%m-%d %H:%M:%S')
-#     print(str(datetime.now()) + "    " + message)
-#     # print(formattedDateTime + "    " + message)
-
-#     log_file_path = "Log_" + dateAsString + ".txt"
-#     with open(log_file_path, 'a') as log_file:
-#         log_file.write(str(datetime.now()) + message + "\n")
-
-
-
 
 def getFirst50SearchTerms(serviceObject):
     try:
@@ -228,7 +162,7 @@ def populateVideoRecordList(searchTermList):
     # For 50 search terms, this should use 7500 out of 10,000 available API credits
     # Searches are worth 100 credits, individual video data is worth 1 credit
     for rider in searchTermList:
-        if count < 50:
+        if count < 2:
             print(count)
             # SEARCH RIDER REQUEST
             URL = "https://www.googleapis.com/youtube/v3/search"
@@ -297,13 +231,31 @@ def populateVideoRecordList(searchTermList):
         count += 1
     return recordList
 
+def setlastVideoRecordUpdate(listIndex, sheetObject):
+    cellToUpdate = "Riders!C" + str(listIndex) # lastVideoRecordUpdate should be in column C of Riders sheet
+    body = {
+        'values' : [
+            [dateAsString]
+        ]
+    }
+    try:
+        response = sheetObject.spreadsheets().values().update(
+            spreadsheetId = masterSheetId, 
+            range = cellToUpdate, 
+            body = body,
+            valueInputOption = 'RAW').execute()
+    except HttpError as e:
+        print(e)
+
 def updateVideoRecordsSheet(firstEmptyRow, sheetObject, newVideoRecords):
     currentRow = firstEmptyRow
+    riderSheetPos = 2
     for record in newVideoRecords:
         rowToUpdate = "VideoRecords!A" + str(currentRow) 
+        data = record.asList()
         body = {
             'values' : [
-                record.asList()
+                data
             ]
         }
         try:
@@ -314,7 +266,11 @@ def updateVideoRecordsSheet(firstEmptyRow, sheetObject, newVideoRecords):
                 valueInputOption = 'RAW').execute()
         except HttpError as e:
             print(e)
+
+        #update Riders Sheet lastVideoRecordUpdate column (should be column C)
+        setlastVideoRecordUpdate(riderSheetPos,sheetObject)
         currentRow += 1
+        riderSheetPos += 1
 
 def getFirstEmptyRow(sheetObject, sheetName):
     recordRange = sheetName + "!A1:A"
@@ -336,16 +292,24 @@ def getFirstEmptyRow(sheetObject, sheetName):
 def main():
     
     googleSheetObject = getGoogleSheet(sheetsApi, sheetsApiVersion, [], keyFileLocation)
-    # sortRiderSheetByLastUpdated(googleSheetObject)
+    sortRiderSheetByLastUpdated(googleSheetObject)
     searchTerms = getFirst50SearchTerms(googleSheetObject)["values"] #searchTerms is a list
 
     # Populate Video Record list via Youtube API
-    # videoRecordList = populateVideoRecordList(searchTerms)
+    videoRecordList = populateVideoRecordList(searchTerms)
+    # a = YtVideoRecord()
+    # a.channelId = "a"
+    # b = YtVideoRecord()
+    # b.channelId = "b"
+    # c = YtVideoRecord()
+    # c.channelId = "c"
+    # videoRecordList = [a, b, c]
 
-    firstEmptyRow = getFirstEmptyRow(googleSheetObject, "VideoRecords")
     # Push video record list to Google Sheet
-    newRecord = YtVideoRecord()
-    updateVideoRecordsSheet(firstEmptyRow, googleSheetObject, [newRecord])
+    firstEmptyRow = getFirstEmptyRow(googleSheetObject, "VideoRecords")
+    updateVideoRecordsSheet(firstEmptyRow, googleSheetObject, videoRecordList)
+
+    # Update the Riders sheet lastVideoRecordUpdate field (should be column C)
 
 
     # 2. Add search term to dict as key, with another empty dict as value
