@@ -93,23 +93,24 @@ class YtVideoRecord:
     #         str(self.videoCommentCount)
     #     )
     
-    # def asList(self):
-    #     return (
-    #         [self.videoId,
-    #         str(self.videoTitle),
-    #         self.rider,
-    #         str(self.publishDate),
-    #         str(self.captureDate),
-    #         self.channelId,
-    #         str(self.channelTitle),
-    #         str(self.videoDuration),
-    #         str(self.videoDefinition),
-    #         str(self.videoViewCount),
-    #         str(self.videoLikeCount),
-    #         str(self.videoFavoriteCount),
-    #         str(self.videoCommentCount)
-    #         ]
-    #     )
+    def asList(self):
+        return (
+            [
+            str(self.videoId),
+            str(self.videoTitle),
+            str(self.rider),
+            str(self.publishDate),
+            str(self.captureDate),
+            str(self.channelId),
+            str(self.channelTitle),
+            str(self.videoDuration),
+            str(self.videoDefinition),
+            str(self.videoViewCount),
+            str(self.videoLikeCount),
+            str(self.videoFavoriteCount),
+            str(self.videoCommentCount)
+            ]
+        )
 
 
 def youtubeSearch(ytConnection, searchParam):
@@ -296,14 +297,55 @@ def populateVideoRecordList(searchTermList):
         count += 1
     return recordList
 
+def updateVideoRecordsSheet(firstEmptyRow, sheetObject, newVideoRecords):
+    currentRow = firstEmptyRow
+    for record in newVideoRecords:
+        rowToUpdate = "VideoRecords!A" + str(currentRow) 
+        body = {
+            'values' : [
+                record.asList()
+            ]
+        }
+        try:
+            response = sheetObject.spreadsheets().values().update(
+                spreadsheetId = masterSheetId, 
+                range = rowToUpdate, 
+                body = body,
+                valueInputOption = 'RAW').execute()
+        except HttpError as e:
+            print(e)
+        currentRow += 1
+
+def getFirstEmptyRow(sheetObject, sheetName):
+    recordRange = sheetName + "!A1:A"
+    try:
+        result = (
+            sheetObject.spreadsheets()
+            .values()
+            .get(spreadsheetId=masterSheetId, range=recordRange)
+            .execute()
+        )
+        videoIds = result.get("values", [])
+
+        return len(videoIds) + 1
+
+    except HttpError as error:
+        print(f"An error occurred: {error}")
+        return error
+
 def main():
     
     googleSheetObject = getGoogleSheet(sheetsApi, sheetsApiVersion, [], keyFileLocation)
-    sortRiderSheetByLastUpdated(googleSheetObject)
+    # sortRiderSheetByLastUpdated(googleSheetObject)
     searchTerms = getFirst50SearchTerms(googleSheetObject)["values"] #searchTerms is a list
 
-    # Create Video Record list
-    videoRecordList = populateVideoRecordList(searchTerms)
+    # Populate Video Record list via Youtube API
+    # videoRecordList = populateVideoRecordList(searchTerms)
+
+    firstEmptyRow = getFirstEmptyRow(googleSheetObject, "VideoRecords")
+    # Push video record list to Google Sheet
+    newRecord = YtVideoRecord()
+    updateVideoRecordsSheet(firstEmptyRow, googleSheetObject, [newRecord])
 
 
     # 2. Add search term to dict as key, with another empty dict as value

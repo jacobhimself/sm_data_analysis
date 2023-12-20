@@ -6,11 +6,6 @@ To collect instagram follower data and export it to a Google Drive folder.
 A Google Apps Script will handle the uploading of that data to a Google Sheet for data analysis
 """
 
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
-from google.oauth2 import service_account
-from googleapiclient.http import MediaFileUpload
-
 import os.path
 from datetime import date
 import instaloader
@@ -18,30 +13,9 @@ import time
 
 from googleSheetsHelper import *
 
-sharedFolderId = "1LrkxznfjcjB2Gmg180FdPF0U3JHyBV-Z"
-scope = 'https://www.googleapis.com/auth/drive'
 keyFileLocation = os.path.dirname(os.path.realpath(__file__)) + '/cloud_service_account_key.json'
 dateAsString = str(date.today())
 
-
-# Return a service that communicates to Google Drive API
-def getMyDrive(api_name, api_version, scopes, key_file_location):
-    # Can be adjusted to access other APIs by adjusting the api_name variable
-
-    # Args:
-    #     api_name: The name of the api to connect to.
-    #     api_version: The api version to connect to.
-    #     scopes: A list auth scopes to authorize for the application.
-    #     key_file_location: The path to a valid service account JSON key file.
-
-    # Get service account credentials to automate Oauth procedure
-    credentials = service_account.Credentials.from_service_account_file(key_file_location)
-    scoped_credentials = credentials.with_scopes(scopes)
-
-    # Build the service object.
-    service = build(api_name, api_version, credentials=scoped_credentials)
-
-    return service
 
 # Use instaloader module to retrieve follower data, save the data in follower_files/"todaysFile"
 def loadIgSession():
