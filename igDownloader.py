@@ -22,10 +22,6 @@ sharedFolderId = "1LrkxznfjcjB2Gmg180FdPF0U3JHyBV-Z"
 scope = 'https://www.googleapis.com/auth/drive'
 keyFileLocation = os.path.dirname(os.path.realpath(__file__)) + '/cloud_service_account_key.json'
 dateAsString = str(date.today())
-handleFileName = "Handles: " + dateAsString + ".csv"
-handleFileNamePath =  os.path.dirname(os.path.realpath(__file__)) +  "/handle_files/" + handleFileName 
-outputCsvFileName = dateAsString + ".csv"
-outputCsvFileNamePath = os.path.dirname(os.path.realpath(__file__))+ "/follower_files/" + outputCsvFileName
 
 
 # Return a service that communicates to Google Drive API
