@@ -17,6 +17,8 @@ from datetime import date
 import instaloader
 import time
 
+from googleSheetsHelper import *
+
 sharedFolderId = "1LrkxznfjcjB2Gmg180FdPF0U3JHyBV-Z"
 scope = 'https://www.googleapis.com/auth/drive'
 keyFileLocation = os.path.dirname(os.path.realpath(__file__)) + '/cloud_service_account_key.json'
@@ -47,22 +49,22 @@ def getMyDrive(api_name, api_version, scopes, key_file_location):
     return service
 
 # Retrieve csv ig handle list from Drive and save in handle_files/"todaysFile"
-def downloadHandleList(serviceObject):
-    #search for the file by name
-    results = serviceObject.files().list(q=f"name='{handleFileName}'").execute()
-    files = results.get('files',[])
+# def downloadHandleList(serviceObject):
+#     #search for the file by name
+#     results = serviceObject.files().list(q=f"name='{handleFileName}'").execute()
+#     files = results.get('files',[])
 
 
-    if not files:
-        print(f"No file with the name '{handleFileName}' found.")
-    else:
-        file_id = files[0]['id']
+#     if not files:
+#         print(f"No file with the name '{handleFileName}' found.")
+#     else:
+#         file_id = files[0]['id']
     
-    #download the csv file and save/write it to the handle_files folder
-    request = serviceObject.files().get_media(fileId = file_id)
-    with open(handleFileNamePath, 'wb') as file:
-        file.write(request.execute())
-        print(f"CSV file '{handleFileName}' downloaded to '{handleFileNamePath}'.")
+#     #download the csv file and save/write it to the handle_files folder
+#     request = serviceObject.files().get_media(fileId = file_id)
+#     with open(handleFileNamePath, 'wb') as file:
+#         file.write(request.execute())
+#         print(f"CSV file '{handleFileName}' downloaded to '{handleFileNamePath}'.")
 
 # Use instaloader module to retrieve follower data, save the data in follower_files/"todaysFile"
 def ig_data_pull():
@@ -79,61 +81,102 @@ def ig_data_pull():
     except Exception as e:
         print(f'An error occurred while loading instaloader session: {e}')
 
+    return loader
 
     # Import csv list of ig account handles and create default dict to store them
-    followerDict = populateDefaultDict()
+    # followerDict = populateDefaultDict()
 
     # Populate follower dict with actual follower counts
-    populateFollowerDict(followerDict, loader)
+    # populateFollowerDict(followerDict, loader)
 
     # Write the follower dict to file
-    saveDictToCSV(followerDict)
+    # saveDictToCSV(followerDict)
 
 # Create a dict with a key for each handle in the handle_files/"todaysFile" csv, and the value set to -1
 # This is to help easily identify any missing values
-def populateDefaultDict():
+# def populateDefaultDict():
 
-    tempDict = {}
-    with open(handleFileNamePath, 'r') as f:
+#     tempDict = {}
+#     with open(handleFileNamePath, 'r') as f:
 
-        #remove line break and add key:value pair to dictionary
-        for line in f:
-            tempDict[line.strip()] = -1
-    f.close()
-    return tempDict
+#         #remove line break and add key:value pair to dictionary
+#         for line in f:
+#             tempDict[line.strip()] = -1
+#     f.close()
+#     return tempDict
 
 # Given a dict with instagram handles as keys, populate the values from instagram
 # time.sleep(30) is used to stop instaloader from triggering Instagram's suspicious activity check by slowing down requests to 2 per minute
-def populateFollowerDict(handleDictIn, igSession):
+# def populateFollowerDict(handleDictIn, igSession):
+#     count = 0
+#     for handle in handleDictIn.keys():
+#         dl_user = handle
+#         print("Gathering data for ", dl_user)
+#         handleDictIn[handle] = instaloader.Profile.from_username(igSession.context, dl_user).followers
+#         time.sleep(30)
+#         count += 1
+
+def retrieveIgFollowers(igSession):
+    # Get the Google Sheet Object
+    googleSheetObject = getGoogleSheet(sheetsApi, sheetsApiVersion, [], keyFileLocation)
+
+    # Sort Rider-Name Sheet by last updated so that accounts most in need of update can be updated first.
+    # instaloader has a limit of about 100 accounts per day, so there is a limit as to how up to date the data is (of about 7-10 days)
+    sortRiderSheetByLastIgFollowerUpdate(googleSheetObject)
+
+    # Create a list of ig accounts you want the number of followers of
+    igAccounts = getIgAccountNamesFromRiderSheet(googleSheetObject)
+
+    #Get the index for todays column
+    todaysColIndex = getTodaysColumnIndex(googleSheetObject)
+
+    # Set todays date in header row
+    setMasterSheetDateHeader(googleSheetObject, todaysColIndex)
+
+    # Get list of handle names from Master Sheet
+    # Master sheet is not in same order as Riders sheet so we need to 
+    # find the row index of each record
+    masterSheetHandles = getIgAccountNamesFromMasterSheet(googleSheetObject)
+
+    print("There are " + str(len(igAccounts)) + " accounts to get followers for")
     count = 0
-    for handle in handleDictIn.keys():
-        dl_user = handle
+    print(igAccounts)
+    # print(type(igAccounts))
+    for handle in igAccounts:
+        dl_user = handle[0]
         print("Gathering data for ", dl_user)
-        handleDictIn[handle] = instaloader.Profile.from_username(igSession.context, dl_user).followers
+        todaysFollowerCount = instaloader.Profile.from_username(igSession.context, dl_user).followers
+        print("follower count for " + dl_user + " is " + str(todaysFollowerCount))
+        masterSheetIndex = masterSheetHandles.index([dl_user])
+        print("found " + dl_user + " in masterSheet")
+        
+        setFollowerCountFromListPos(listIndex=masterSheetIndex, colIndex=todaysColIndex, sheetObject=googleSheetObject, followerCount=todaysFollowerCount)
+        setlastIgFollowerUpdate(listIndex=count, sheetObject=googleSheetObject)
+        print("Finished data gathering for " + dl_user)
         time.sleep(30)
         count += 1
 
 # Write contents of handle : follower dict to follower_files/"todaysFile"
-def saveDictToCSV(dictIn):
+# def saveDictToCSV(dictIn):
 
-    with open(outputCsvFileNamePath,'w') as f:
-        w = csv.writer(f)
-        w.writerows(dictIn.items())
+#     with open(outputCsvFileNamePath,'w') as f:
+#         w = csv.writer(f)
+#         w.writerows(dictIn.items())
     
-    print("The following key:value pairs have been saved to csv")
-    for x, y in dictIn.items():
-        print(x, y)
+#     print("The following key:value pairs have been saved to csv")
+#     for x, y in dictIn.items():
+#         print(x, y)
 
 # Upload the completed handle,follower csv file to Google Drive
-def uploadCsvFile(serviceObject):
+# def uploadCsvFile(serviceObject):
 
-    file_metadata = {"name": outputCsvFileName, "parents":[sharedFolderId]}
-    media = MediaFileUpload(outputCsvFileNamePath, mimetype="text/csv", resumable=True)
-    file = (
-        serviceObject.files()
-        .create(body=file_metadata, media_body=media, fields="id")
-        .execute()
-    )
+#     file_metadata = {"name": outputCsvFileName, "parents":[sharedFolderId]}
+#     media = MediaFileUpload(outputCsvFileNamePath, mimetype="text/csv", resumable=True)
+#     file = (
+#         serviceObject.files()
+#         .create(body=file_metadata, media_body=media, fields="id")
+#         .execute()
+#     )
 
 # In the event that a new IgSession needs creating, use this function and the Instaloader.save_session() method (to get the session instance)
 # def createIgSession(userName, password):
@@ -145,36 +188,37 @@ def main():
 
     # Create a service object, "service" that represents our Google Drive
     # Methods can then be used to perform certain functions to download or upload data
-    try:
-        # Authenticate and construct service.
-        service = getMyDrive(api_name='drive', api_version='v3', scopes=[scope], key_file_location=keyFileLocation)
+    # try:
+    #     # Authenticate and construct service.
+    #     service = getMyDrive(api_name='drive', api_version='v3', scopes=[scope], key_file_location=keyFileLocation)
         
-    except HttpError as error:
-        print(f'An error occurred: {error}')
+    # except HttpError as error:
+    #     print(f'An error occurred: {error}')
 
 
     # Download the list of instagram handles to check for the current day
-    try:
-        downloadHandleList(service)
+    # try:
+    #     downloadHandleList(service)
 
-    except Exception as e:
-        print(f'An error occurred while downloading handles from Google Drive API: {e}')
+    # except Exception as e:
+    #     print(f'An error occurred while downloading handles from Google Drive API: {e}')
 
     
     # Use the instaloader module to populate the csv file containing both handles and follower counts
     try:
-        ig_data_pull()
+        newLoader = ig_data_pull()
 
     except Exception as e:
         print(f'An error occurred while using the instaloader module or writing to output csv file: {e}')
 
 
+    retrieveIgFollowers(newLoader)
     # Upload the completed handle-follower count csv file to the Google Drive
-    try:
-        uploadCsvFile(service)
+    # try:
+    #     uploadCsvFile(service)
 
-    except Exception as e:
-        print(f'An error occurred while uploading handle-follower csv file to Google Drive API: {e}')
+    # except Exception as e:
+    #     print(f'An error occurred while uploading handle-follower csv file to Google Drive API: {e}')
     
 
 

@@ -14,7 +14,7 @@ from google.oauth2 import service_account
 from googleapiclient.http import MediaFileUpload
 
 import os.path
-from datetime import date
+from datetime import date, datetime
 
 
 
@@ -58,7 +58,7 @@ def sortRiderSheetByLastIgFollowerUpdate(serviceObject):
 
     res = serviceObject.spreadsheets().batchUpdate(body=requests, spreadsheetId=masterSheetId).execute()
 
-def getIgAccountNames(sheetObject, numAccounts = 100):
+def getIgAccountNamesFromRiderSheet(sheetObject, numAccounts = 100):
     # Return a list that contains the number of instragram account handles specified
     accountRange = "Riders!A2:A" + str(numAccounts) #ig handles should be in A column
     try:
@@ -70,12 +70,34 @@ def getIgAccountNames(sheetObject, numAccounts = 100):
         )
         rows = result.get("values", [])
         print(f"{len(rows)} rows retrieved")
-        for row in rows:
-            print(row)
-        return result
+        # for row in rows:
+        #     print(row)
+        # return result['values']
+        return rows
     except HttpError as error:
         print(f"An error occurred: {error}")
         return error
+    
+def getIgAccountNamesFromMasterSheet(sheetObject):
+    # Return a list that contains the number of instragram account handles specified
+    accountRange = "MasterSheet!A2:A5000" # ig handles should be in column A
+    try:
+        result = (
+            sheetObject.spreadsheets()
+            .values()
+            .get(spreadsheetId=masterSheetId, range=accountRange)
+            .execute()
+        )
+        rows = result.get("values", [])
+        print(f"{len(rows)} rows retrieved")
+        # for row in rows:
+        #     print(row)
+        return result['values']
+    except HttpError as error:
+        print(f"An error occurred: {error}")
+        return error
+    
+
     
 
 def getTodaysColumnIndex(sheetObject):
@@ -89,20 +111,39 @@ def getTodaysColumnIndex(sheetObject):
             .execute()
         )
         dates = result.get("values", [])
-        print(f"{len(dates)} dates retrieved")
-        for row in dates:
-            print(row)
-        print("column index for today is: " + str(len(dates[0])))
+        # print("length of dates is " + str(len(dates[0]))) len is 49
+
+        input_date = datetime.strptime(dateAsString, "%Y-%m-%d")
+        sheetFormattedDate = input_date.strftime("%d/%m/%Y")
+        print([sheetFormattedDate])
+        print(dates[0])
+        # if today is alreayd in there then index=len(dates[0]) will be + 1 I think
+        if(sheetFormattedDate in dates[0]):
+            # index = dates.index([sheetFormattedDate])
+            print("HELLO WORLD")
+            result = ""
+            index = len(dates[0]) + 1
+            while index > 0:
+                index -= 1
+                result = chr(index % 26 + ord('A')) + result
+                index //= 26
+            print(result)
+            return result
+        else:
+            result = ""
+            index = len(dates[0]) + 2
+            while index > 0:
+                index -= 1
+                result = chr(index % 26 + ord('A')) + result
+                index //= 26
+            # print(result)
+            return result
+        # for row in dates:
+        #     print(row)
+        # print("column index for today is: " + str(len(dates[0])))
 
         #convert the column index into a string. ie. 49 = "AX"
-        result = ""
-        index = len(dates[0]) + 2
-        while index > 0:
-            index -= 1
-            result = chr(index % 26 + ord('A')) + result
-            index //= 26
-        print(result)
-        return result
+        
 
     except HttpError as error:
         print(f"An error occurred: {error}")
@@ -143,31 +184,47 @@ def setFollowerCountFromListPos(listIndex, colIndex, sheetObject, followerCount)
             valueInputOption = 'RAW').execute()
     except HttpError as e:
         print(e)
+    print("Added the following list, col, follower:" + str(listIndex) + colIndex + str(followerCount))
+
+def setlastIgFollowerUpdate(listIndex, sheetObject):
+    rowNum = listIndex + 2
+    cellToUpdate = "Riders!D" + str(rowNum) # lastIgFollowerUpdate should be in column D of Riders sheet
+    body = {
+        'values' : [
+            [dateAsString]
+        ]
+    }
+    try:
+        response = sheetObject.spreadsheets().values().update(
+            spreadsheetId = masterSheetId, 
+            range = cellToUpdate, 
+            body = body,
+            valueInputOption = 'RAW').execute()
+    except HttpError as e:
+        print(e)
+
+# def main():
+#         # Get the Google Sheet Object
+#         googleSheetObject = getGoogleSheet(sheetsApi, sheetsApiVersion, [], keyFileLocation)
+
+#         # Sort Rider-Name Sheet by last updated so that accounts most in need of update can be updated first.
+#         # instaloader has a limit of about 100 accounts per day, so there is a limit as to how up to date the data is (of about 7-10 days)
+#         sortRiderSheetByLastIgFollowerUpdate(googleSheetObject)
+
+#         # Create a list of ig accounts you want the number of followers of
+#         igAccounts = getIgAccountNames(googleSheetObject)
+
+#         #Get the index for todays column
+#         todaysColIndex = getTodaysColumnIndex(googleSheetObject)
+
+#         # Set todays date in header row
+#         setMasterSheetDateHeader(googleSheetObject, todaysColIndex)
+
+
+#         # Set a value in the sheet
+#         setFollowerCountFromListPos(listIndex=0, colIndex=todaysColIndex, sheetObject=googleSheetObject, followerCount = 500)
 
 
 
-def main():
-        # Get the Google Sheet Object
-        googleSheetObject = getGoogleSheet(sheetsApi, sheetsApiVersion, [], keyFileLocation)
 
-        # Sort Rider-Name Sheet by last updated so that accounts most in need of update can be updated first.
-        # instaloader has a limit of about 100 accounts per day, so there is a limit as to how up to date the data is (of about 7-10 days)
-        sortRiderSheetByLastIgFollowerUpdate(googleSheetObject)
-
-        # Create a list of ig accounts you want the number of followers of
-        igAccounts = getIgAccountNames(googleSheetObject)
-
-        #Get the index for todays column
-        todaysColIndex = getTodaysColumnIndex(googleSheetObject)
-
-        # Set todays date in header row
-        setMasterSheetDateHeader(googleSheetObject, todaysColIndex)
-
-
-        # Set a value in the sheet
-        setFollowerCountFromListPos(listIndex=0, colIndex=todaysColIndex, sheetObject=googleSheetObject, followerCount = 500)
-
-
-
-
-main()
+# main()
