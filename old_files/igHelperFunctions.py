@@ -1,4 +1,13 @@
-# import numpy as np
+"""
+Author: Jacob France
+Date: 20/12/2023
+File Description:
+The helper functions in this file are redundant to the functionality of the repository, as the way instagram data is downloaded and stored
+has now changed to bypass the need for csv files.
+
+I am only keeping the files in case they are needed at a later date, for a different use case.
+"""
+
 import csv
 from datetime import date
 import instaloader
@@ -93,11 +102,3 @@ def getNewRiderList():
     updatedHandlesTracked = updateHandlesTracked(currentlyFollowed, L)
 
     saveUpdatedHandleDictToCSV(updatedHandlesTracked)
-
-
-
-
-
-
-
-
