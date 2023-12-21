@@ -1,20 +1,8 @@
 # sm_data_analysis
-The aim of this repository is to create a tool to pull follower and engagement data from instagram using python, and save it in a csv format.
+Initially, the aim of this repository was to create a tool to pull follower and engagement data from instagram using the python instaloader module. Data would be saved in a csv format, before being uploaded to a Google Drive, and then imported to a Google Sheet. This data lifecycle can be seen in ig_follower_data_capture.jpg. While the end result is the same, I have gone through a few iterations of the implementation and settled on one that is far more streamlined, and captures more relevant data.
 
-A log of progress will be kept here in the README file
+The repo now has 2 main functionalities:
+1 - To capture and store the number of instagram followers for a list of accounts stored in a Google Sheet
+2 - To use the Youtube API to gather data on the performance of youtube videos for the owners of the instagram accounts being tracked.
 
-The daily lifecyle of data movement in this project is as follows:
-
-![IG_Follower_Diagram](ig_follower_data_capture.jpg)
-
-Day 1:
-Created draft outline of the project and daily lifecycle. Originally wanted to use R for data scraping but python appeared to be an easier solution with regards to available modules
-Spent time becoming reacquainted with python after not using it since graduating university (4 years ago!). Relearned how to read/write to/from csv files.
-Set up pip installer
-Searched for module to help with instagram scraping
-As part of initial drafting, my script pulled and pushed the WHOLE spreadsheet of handles and follower counts, which will become unneccesarily slow once the spreadsheet is populated. Came up with solution to just pull a list of account handles each day (in case there are insertions/deletions) and upload only the follower count for that day.
-
-Day 2:
-Finished steps 2, 3, and 4. Step 5 is finished up to the point where only the automation aspect is left to do.
-Became acquainted with Google Apps Script, which is effectively a javascript library with built in functions to interact with Google products (in this case, Sheets). I don't foresee automating the pulling of data from the csv in the Drive folder to be too difficult as I saw that timers can be set to run scripts at certain intervals.
-One addition I made that I had not previously planned for was converting the daily handle/follower csv into a JSON object so that it can be processed with greater ease once it is in the Apps Script environment.
+This repo was created for the purpose of helping BMX or BMX related companies make data-informed decisions on riders to sponsor in order to promote their products. Instagram follower account alone does not tell a complete picture as to how effective marketing through that account will be. Youtube data is helpful in telling a more complete picture, as video performance over time can be tracked. While the repo was created to aid BMX companies, there is no reason that the functionalities could not be used for other industries where there is a heavy focus on video content to promote products (skateboarding, scooters, snowboarding, mountain biking etc). 
