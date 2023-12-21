@@ -11,7 +11,6 @@ functionality out too much and had too many steps.
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from google.oauth2 import service_account
-from googleapiclient.http import MediaFileUpload
 
 import os.path
 from datetime import date, datetime

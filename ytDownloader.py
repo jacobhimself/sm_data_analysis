@@ -30,9 +30,7 @@ import isodate
 import time
 
 
-sharedFolderId = "1LrkxznfjcjB2Gmg180FdPF0U3JHyBV-Z"
-scope = 'https://www.googleapis.com/auth/drive'
-scopeYt = ["https://www.googleapis.com/auth/youtube.force-ssl"]
+
 youtubeApiKey = ytApiKey.apiKey
 youtubeApi = "youtube"
 youtubeApiVersion = "v3"
@@ -43,6 +41,8 @@ masterSheetId = "1zyWCq_QgFe8xkCwxULzovpS4LSmIGczoEBZXVCyCKlM"
 
 keyFileLocation = os.path.dirname(os.path.realpath(__file__)) + '/cloud_service_account_key.json'
 dateAsString = str(date.today())
+
+numYoutubeSearches = 2
 
 
 class YtVideoRecord:
@@ -116,7 +116,8 @@ def getFirst50SearchTerms(serviceObject):
         print(f"{len(rows)} rows retrieved")
         for row in rows:
             print(row)
-        return result
+        # return result
+        return rows
     except HttpError as error:
         print(f"An error occurred: {error}")
         return error
@@ -157,13 +158,14 @@ def populateVideoRecordList(searchTermList):
     # For 50 search terms, this should use 7500 out of 10,000 available API credits
     # Searches are worth 100 credits, individual video data is worth 1 credit
     for rider in searchTermList:
-        if count < 50:
+        if count < numYoutubeSearches:
             print(count)
+            
             # SEARCH RIDER REQUEST
             URL = "https://www.googleapis.com/youtube/v3/search"
             PARAMS = {
                 "key": youtubeApiKey,
-                "q": str(rider) + " bmx",
+                "q": str(rider[0]) + " bmx",
                 "type":"video",
                 "part":"snippet",
                 "maxResults":50,
@@ -228,6 +230,7 @@ def populateVideoRecordList(searchTermList):
     return recordList
 
 def setlastVideoRecordUpdate(listIndex, sheetObject):
+    # Set the time that the video record was updated
     cellToUpdate = "Riders!C" + str(listIndex) # lastVideoRecordUpdate should be in column C of Riders sheet
     body = {
         'values' : [
@@ -245,9 +248,18 @@ def setlastVideoRecordUpdate(listIndex, sheetObject):
 
 def updateVideoRecordsSheet(firstEmptyRow, sheetObject, newVideoRecords):
     currentRow = firstEmptyRow
-    riderSheetPos = 2
+    riderSheetPos = 2 # Riders sheet is sorted prior to updateVideoRecordsSheet() being called. Pos = 2 to start on second row, since first row contains headers
+
+    # newVideoRecords[0] is a YtVideoRecord
+    currentRider = newVideoRecords[0].rider
+    # Add each record to the first empty row of the VideoRecords Google Sheet
     for record in newVideoRecords:
-        rowToUpdate = "VideoRecords!A" + str(currentRow) 
+        
+        # Only increment the ridersheetPost if the rider changes
+        if record.rider != currentRider:
+            riderSheetPos += 1
+            currentRider = record.rider
+        rowToUpdate = "VideoRecords!A" + str(currentRow)
         data = record.asList()
         body = {
             'values' : [
@@ -266,7 +278,8 @@ def updateVideoRecordsSheet(firstEmptyRow, sheetObject, newVideoRecords):
         #update Riders Sheet lastVideoRecordUpdate column (should be column C)
         setlastVideoRecordUpdate(riderSheetPos,sheetObject)
         currentRow += 1
-        riderSheetPos += 1
+        #currentRider = newVideoRecords[currentRow].rider
+        
         time.sleep(1.5)
 
 def getFirstEmptyRow(sheetObject, sheetName):
@@ -290,7 +303,9 @@ def main():
     
     googleSheetObject = getGoogleSheet(sheetsApi, sheetsApiVersion, [], keyFileLocation)
     sortRiderSheetByLastUpdated(googleSheetObject)
-    searchTerms = getFirst50SearchTerms(googleSheetObject)["values"] #searchTerms is a list
+    # searchTerms = getFirst50SearchTerms(googleSheetObject)["values"] #searchTerms is a list
+    searchTerms = getFirst50SearchTerms(googleSheetObject) #searchTerms is a list
+
 
     # Populate Video Record list via Youtube API
     videoRecordList = populateVideoRecordList(searchTerms)

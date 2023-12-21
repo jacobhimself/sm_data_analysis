@@ -1,0 +1,9 @@
+instaloader==4.10.1
+google-api-python-client==2.108.0
+google-auth==2.23.4
+google-auth-httplib2==0.1.1
+google-auth-oauthlib==0.4.1
+google-api-core==2.14.0
+googleapis-common-protos==1.61.0
+requests==2.25.1
+isodate==-0.6.1
