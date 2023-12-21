@@ -4,18 +4,23 @@ Date: 20/12/2023
 File Description:
 Instagram follower counts alone do not tell a complete picture of online performance and marketability. Youtube videos are a common form of promotion in the action sports industry
 and I have decided to use video performance to supplement the data obtained from instagram
+
+A brief summary:
+1 - A list of bmx rider names is pulled from a Google Sheet via the Sheets api
+2 - The list is looped through, with " bmx" being appended to each riders name before using the Youtube api search.list() endpoint to get the 50 most viewed videos for that rider's name
+3 - For each search term, all 50 videos are looped through, with stats for each video, such as view count, like count, comment count, etc being obtained with a call to the videos (not video - singular) endpoint.
+4 - A list of the YtVideoRecord class is used to hold all records and fields being captured in steps 2 and 3. Once the loops have completed, each item of the list is pushed to a Google sheet via
+    the Sheets api. (Please note: a timer is used to slow down the process of pushing the records as there is an api limit of 60 requests per minute)
 """
 
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from google.oauth2 import service_account
-from googleapiclient.http import MediaFileUpload
 
 
 import os.path
-import csv
 from datetime import date, timedelta
-from datetime import datetime
+from datetime import datetime, timezone
 import ytApiKey
 
 
@@ -35,8 +40,6 @@ youtubeApiVersion = "v3"
 sheetsApi = "sheets"
 sheetsApiVersion = "v4"
 masterSheetId = "1zyWCq_QgFe8xkCwxULzovpS4LSmIGczoEBZXVCyCKlM"
-
-clientSecret = "client_secret.json"
 
 keyFileLocation = os.path.dirname(os.path.realpath(__file__)) + '/cloud_service_account_key.json'
 dateAsString = str(date.today())
@@ -95,17 +98,6 @@ class YtVideoRecord:
         )
 
 
-def youtubeSearch(ytConnection, searchParam):
-    dateAfter = date.today() - timedelta(days=(10* 365)) # Search for videos in last ten years
-    request = ytConnection.search().list(
-        part = "snippet",
-        order = "relevance",
-        q = searchParam,
-        publishedAfter = dateAfter
-    )
-    response = request.execute()
-    return response
-
 def getGoogleSheet(api_name, api_version, scopes, key_file_location):
     creds = service_account.Credentials.from_service_account_file(key_file_location)
     service = build(api_name, api_version, credentials=creds)
@@ -157,13 +149,15 @@ def sortRiderSheetByLastUpdated(serviceObject):
 def populateVideoRecordList(searchTermList):
     recordList = []
     count = 0
+    dateAfter = date.today() - timedelta(days=(10* 365)) # Search for videos in last ten years
+    dateAfter = (datetime.now(timezone.utc) - timedelta(10*365)).isoformat()
 
     # iterate through  list of search terms. Based on usage in main() this should be 50 terms
     # For each search term, there will be 50 results from the youtube search.
     # For 50 search terms, this should use 7500 out of 10,000 available API credits
     # Searches are worth 100 credits, individual video data is worth 1 credit
     for rider in searchTermList:
-        if count < 15:
+        if count < 50:
             print(count)
             # SEARCH RIDER REQUEST
             URL = "https://www.googleapis.com/youtube/v3/search"
@@ -174,7 +168,8 @@ def populateVideoRecordList(searchTermList):
                 "part":"snippet",
                 "maxResults":50,
                 # "order":"relevance"
-                "order":"viewCount"
+                "order":"viewCount",
+                "publishedAfter": str(dateAfter)
             }
 
             r = requests.get(url = URL, params = PARAMS)
@@ -299,156 +294,14 @@ def main():
 
     # Populate Video Record list via Youtube API
     videoRecordList = populateVideoRecordList(searchTerms)
-    # a = YtVideoRecord()
-    # a.channelId = "a"
-    # b = YtVideoRecord()
-    # b.channelId = "b"
-    # c = YtVideoRecord()
-    # c.channelId = "c"
-    # videoRecordList = [a, b, c]
 
     # Push video record list to Google Sheet
+    # lastIgFollowerUpdate column is updated inside updateVideoRecordsSheet() below
     firstEmptyRow = getFirstEmptyRow(googleSheetObject, "VideoRecords")
     updateVideoRecordsSheet(firstEmptyRow, googleSheetObject, videoRecordList)
 
-    # Update the Riders sheet lastVideoRecordUpdate field (should be column C)
-
-
-    # 2. Add search term to dict as key, with another empty dict as value
-    # riderVideoDict = {}
-
-    # for rider in searchTerms:
-    #     riderVideoDict[str(rider)] = {}
-
-    #3. For each rider, get a search result with 50 results
-    #       for each result, create a ytVideoRecord and set the properties for:
-    #           videoId
-    #           videoTitle
-    #           Rider (search term)
-    #           publishDate (date video was published)
-    #           captureDate (defaults to today)
-    #           channelID
-    #           channelTitle
-    # recordList = []
-    # count = 0
-    # for rider in searchTerms:
-    #     if count < 40:
-    #         print(count)
-    #         # SEARCH RIDER REQUEST
-    #         URL = "https://www.googleapis.com/youtube/v3/search"
-    #         PARAMS = {
-    #             "key": youtubeApiKey,
-    #             "q": rider,
-    #             "type":"video",
-    #             "part":"snippet",
-    #             "maxResults":50,
-    #             # "order":"relevance"
-    #             "order":"viewCount"
-    #         }
-
-    #         r = requests.get(url = URL, params = PARAMS)
-    #         print(r)
-    #         searchResults = r.json()["items"]
-
-    #         for result in searchResults:
-    #             # START BY GETTING THE INFORMATION AVAILABLE FROM THE INITIAL SEARCH
-    #             record = YtVideoRecord()
-    #             record.rider = str(rider)
-    #             record.videoId = result["id"]["videoId"]
-    #             record.videoTitle = result["snippet"]["title"]
-    #             record.publishDate = result["snippet"]["publishedAt"]
-    #             record.channelId = result["snippet"]["channelId"]
-    #             record.channelTitle = result["snippet"]["channelTitle"]
-
-    #             # THEN MAKE A REQUEST FOR THE VIDEO BASED ON THE VIDEO ID AND COMPLETE THE RECORD
-
-    #             # GET VIDEO DETAILS REQUEST
-    #             URL = "https://www.googleapis.com/youtube/v3/videos"
-    #             PARAMS = {
-    #                 "key": youtubeApiKey,
-    #                 "part": "snippet, statistics, contentDetails",
-    #                 "id": record.videoId,
-    #             }
-
-    #             r = requests.get(url = URL, params = PARAMS)
-    #             print("retrieving video record for " + str(record.videoTitle))
-    #             result = r.json()["items"]
-    #             videoData = result[0]
-    #             print("retrieved: ")
-    #             print(videoData["snippet"]["title"])
-
-
-    #             try:
-    #                 #set video length property, extracting length from the "PT3M49S" ISO8601 format and setting it in seconds
-    #                 # isovideoDuration = isodate.parse_duration(videoData["contentDetails"]["duration"]).total_seconds()
-    #                 videoLength = isodate.parse_duration(videoData["contentDetails"]["duration"]).total_seconds()
-    #                 record.videoDuration = videoLength
-    #                 record.videoDefinition = videoData["contentDetails"]["definition"]
-    #                 record.videoViewCount = videoData["statistics"]["viewCount"]
-    #                 record.videoLikeCount = videoData["statistics"]["likeCount"]
-    #                 record.videoFavoriteCount = videoData["statistics"]["favoriteCount"]
-    #                 record.videoCommentCount = videoData["statistics"]["commentCount"]
-
-    #             except KeyError as e:
-    #                 print("Key Error. Not all fields retrieved. Check data for default values")
-    #                 print(e)
-
-
-    #             # APPEND THE VIDEO RECORD TO THE VIDEO RECORD LIST ONCE ALL FIELDS HAVE BEEN COMPLETED
-    #             videoRecordList.append(record)
-    #             print(record)
-    #             print("Appended " + record.rider + " - " + record.videoTitle)
-    #             print("Length of videoRecord List is: " + str(len(videoRecordList)))
-    #     count += 1
-    
-    # SAVE THE RECORD AS A CSV SO I DON'T HAVE TO KEEP MAKING CALLS TO THE API. ONCE THIS IS DONE, FIGURE OUT HOW TO SEND THE VIDEO RECORDS DIRECTLY TO GOOGLE SHEET
-    # file_name = "videoRecordList_02.csv"
-
-    # with open(file_name, "w", newline="") as file:
-    #     writer = csv.writer(file)
-    #     writer.writerow([
-    #         "videoId",
-    #         "videoTitle",
-    #         "rider",
-    #         "publishDate",
-    #         "captureDate",
-    #         "channelId",
-    #         "channelTitle",
-    #         "videoDuration (seconds)",
-    #         "videoDefinition",
-    #         "videoViewCount",
-    #         "videoLikeCount",
-    #         "videoFavoriteCount",
-    #         "videoCommentCount"
-    #         ])
-    #     for record in videoRecordList:
-    #         writer.writerow(record.asList())
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     
-    
-    
-
 
 main()

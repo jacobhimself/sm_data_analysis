@@ -2,8 +2,12 @@
 Author: Jacob France
 Date: 30/11/2023
 File Description:
-To collect instagram follower data and export it to a Google Drive folder. 
-A Google Apps Script will handle the uploading of that data to a Google Sheet for data analysis
+1 - A Google Sheet containing a list of instagram handles is sorted, using the Google Sheets api by those with the longest time since their last update
+2 - The Sheets api is then used to obtain a list of instagram handles
+3 - The instaloader python module is used to make calls to the instagram api and obtain the number of followers from each account (other data can be obtained with the same module but 
+    this script is focused primarily on follower counts) 
+4 - The Sheets api is then used to push the follower counts back to a sheet. This sheet is organised such that each column represents a new day of data. The correct column is calculated
+    before pushing data to the sheet.
 """
 
 import os.path
