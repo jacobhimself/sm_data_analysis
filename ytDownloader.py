@@ -42,7 +42,7 @@ masterSheetId = "1zyWCq_QgFe8xkCwxULzovpS4LSmIGczoEBZXVCyCKlM"
 keyFileLocation = os.path.dirname(os.path.realpath(__file__)) + '/cloud_service_account_key.json'
 dateAsString = str(date.today())
 
-numYoutubeSearches = 2
+numYoutubeSearches = 50
 
 
 class YtVideoRecord:
@@ -105,11 +105,11 @@ def getGoogleSheet(api_name, api_version, scopes, key_file_location):
 
 def getFirst50SearchTerms(serviceObject):
     try:
-
+        lastRow = str(1 + numYoutubeSearches)
         result = (
             serviceObject.spreadsheets()
             .values()
-            .get(spreadsheetId=masterSheetId, range="Riders!B2:B51")
+            .get(spreadsheetId=masterSheetId, range="Riders!B2:B" + lastRow)
             .execute()
         )
         rows = result.get("values", [])
@@ -171,7 +171,7 @@ def populateVideoRecordList(searchTermList):
                 "maxResults":50,
                 # "order":"relevance"
                 "order":"viewCount",
-                "publishedAfter": str(dateAfter)
+                # "publishedAfter": str(dateAfter)
             }
 
             r = requests.get(url = URL, params = PARAMS)
@@ -181,7 +181,7 @@ def populateVideoRecordList(searchTermList):
             for result in searchResults:
                 # START BY GETTING THE INFORMATION AVAILABLE FROM THE INITIAL SEARCH
                 record = YtVideoRecord()
-                record.rider = str(rider)
+                record.rider = str(rider[0])
                 record.videoId = result["id"]["videoId"]
                 record.videoTitle = result["snippet"]["title"]
                 record.publishDate = result["snippet"]["publishedAt"]
