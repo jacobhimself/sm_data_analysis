@@ -72,6 +72,23 @@ def getIgAccountNamesFromRiderSheet(sheetObject, numAccounts = 100):
         print(f"An error occurred: {error}")
         return error
     
+def getIgAccountNamesFromNamedSheet(sheetObject, numAccounts = 100, sheetName="Riders"):
+    # Return a list that contains the number of instragram account handles specified
+    accountRange = sheetName + "!A2:A" + str(numAccounts) #ig handles should be in A column
+    try:
+        result = (
+            sheetObject.spreadsheets()
+            .values()
+            .get(spreadsheetId=masterSheetId, range=accountRange)
+            .execute()
+        )
+        rows = result.get("values", [])
+        print(f"{len(rows)} rows retrieved")
+        return rows
+    except HttpError as error:
+        print(f"An error occurred: {error}")
+        return error
+    
 def getIgAccountNamesFromMasterSheet(sheetObject):
     # Return a list that contains the number of instragram account handles specified
     accountRange = "MasterSheet!A2:A5000" # ig handles should be in column A
