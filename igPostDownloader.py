@@ -25,6 +25,14 @@ import os.path
 from datetime import datetime
 from datetime import date, timedelta
 
+from googleapiclient.errors import HttpError
+
+
+from ytDownloader import getFirstEmptyRow
+
+import time
+import random
+
 # from igDownloader import loadIgSession
 
 sheetsApi = "sheets"
@@ -65,6 +73,24 @@ class igPostRecord:
             str(self.postAccountTags) + ","
         )
         return string
+    
+    def asList(self):
+        return (
+            [
+            str(self.postShortCode),
+            str(self.postDate),
+            str(self.postAccount),
+            str(self.postType),
+            str(self.videoViewCount),
+            str(self.postLikes),
+            str(self.postComments),
+            str(self.postIsSponsored),
+            str(self.postSponsors),
+            str(self.postHashtags),
+            str(self.postAccountTags)
+            ]
+        )
+
     
 def sortRiderSheetByLastUpdated(serviceObject):
 
@@ -108,22 +134,83 @@ def loadIgSession():
 
     return loader
 
-def populateIgPostRecordList(ridersToRecord=[]):
+
+def updateIgPostRecordsSheet(firstEmptyRow, sheetObject, newIgRecord):
+    currentRow = firstEmptyRow
+    riderSheetPos = 2 # Riders sheet is sorted prior to updateVideoRecordsSheet() being called. Pos = 2 to start on second row, since first row contains headers
+
+    # newVideoRecords[0] is a YtVideoRecord
+    currentRider = newIgRecord.postAccount
+    
+        
+    # # Only increment the ridersheetPost if the rider changes
+    # if record.rider != currentRider:
+    #     riderSheetPos += 1
+    #     currentRider = record.rider
+    rowToUpdate = "igPostDb!A" + str(currentRow)
+    data = newIgRecord.asList()
+    body = {
+        'values' : [
+            data
+        ]
+    }
+    try:
+        response = sheetObject.spreadsheets().values().update(
+            spreadsheetId = masterSheetId, 
+            range = rowToUpdate, 
+            body = body,
+            valueInputOption = 'USER_ENTERED').execute()
+    except HttpError as e:
+        print(e)
+
+    # #update Riders Sheet lastVideoRecordUpdate column (should be column C)
+    # setlastVideoRecordUpdate(riderSheetPos,sheetObject)
+    # currentRow += 1
+    #currentRider = newVideoRecords[currentRow].rider
+    
+    time.sleep(1.5)
+
+def populateIgPostRecordList(ridersToRecord, sheetObject):
     recordList = []
     count = 0
-    dateAfter = date.today() - timedelta(days=(1*365)) # Search for videos in last year
+    dateAfter = datetime.today() - timedelta(days=(1*365)) # Search for videos in last year
     igLoader = loadIgSession()
 
+    # loop through all riders #######
     for rider in ridersToRecord:
         igProfile = instaloader.Profile.from_username(igLoader.context, rider[0])
         print("Retrieving posts for " + rider[0])
+        count = 0
 
+        # loop through posts for rider #########
         for post in igProfile.get_posts():
+            #post.date is datetime
+            if ((post.date < dateAfter) and count > 10):
+                break
             record = igPostRecord()
-            record.postAccount = rider
+            record.postAccount = rider[0]
             record.postShortCode = post.shortcode
-            print(post.shortcode)
-            break
+            record.postDate = post.date
+            record.postType = post.typename
+            if (post.typename == "GraphVideo"):
+                record.videoViewCount = post.video_view_count
+            record.postLikes = post.likes
+            record.postComments = post.comments
+            record.postIsSponsored = post.sponsor_users
+            record.postHashtags = str(post.caption_hashtags)
+            record.postAccountTags = str(post.tagged_users)
+            # recordList.append
+# //////// Instead of appending I am going to try post directly to sheet
+            # This is due to the liability of keeping the data in memory when the program is susceptible to crashing because of ig limits
+            
+            firstEmptyRow = getFirstEmptyRow(sheetObject, "igPostDb")
+            updateIgPostRecordsSheet(firstEmptyRow, sheetObject, record)
+            print("post added to sheet")
+            count += 1
+        
+        time.sleep(random.uniform(120,240))
+            # print(post.shortcode)
+            
     return 0
 
 
@@ -131,10 +218,14 @@ def main():
     # Create connection to Sheets API
     googleSheet = googleSheetsHelper.getGoogleSheet(sheetsApi, sheetsApiVersion, [], keyFileLocation)
 
-    # Get a list of accounts to get posts for
-    igAccountsToTrack = googleSheetsHelper.getIgAccountNamesFromNamedSheet(googleSheet,46, "FoxTeam")
+    # Get a list of accounts to get posts for, first sorting by last updated igFollowers
+    googleSheetsHelper.sortRiderSheetByLastIgPostUpdate(googleSheet)
+    # igAccountsToTrack = googleSheetsHelper.getIgAccountNamesFromNamedSheet(googleSheet,46, "FoxTeam")
+    numAccounts = 1
+    igAccountsToTrack = googleSheetsHelper.getIgAccountNamesFromNamedSheet(googleSheet,numAccounts, "Riders")
+
 
     # Retrieve the posts for each rider
-    populateIgPostRecordList(igAccountsToTrack)
+    populateIgPostRecordList(igAccountsToTrack, googleSheet)
 
 main()

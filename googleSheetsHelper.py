@@ -55,6 +55,32 @@ def sortRiderSheetByLastIgFollowerUpdate(serviceObject):
 
     res = serviceObject.spreadsheets().batchUpdate(body=requests, spreadsheetId=masterSheetId).execute()
 
+def sortRiderSheetByLastIgPostUpdate(serviceObject):
+
+    requests = {
+    "requests": [
+        {
+            "sortRange": {
+                "range": {
+                    "sheetId": "92107300",
+                    "startRowIndex": 1,
+                    "startColumnIndex": 0
+                },
+                "sortSpecs": [
+                    {
+                        "dimensionIndex":4, # this should be the lastIgPostUpdate field
+                        "sortOrder": "ASCENDING"
+                    }
+                ]
+            }
+        }
+    ]
+    }
+
+
+    res = serviceObject.spreadsheets().batchUpdate(body=requests, spreadsheetId=masterSheetId).execute()
+
+
 def getIgAccountNamesFromRiderSheet(sheetObject, numAccounts = 100):
     # Return a list that contains the number of instragram account handles specified
     accountRange = "Riders!A2:A" + str(numAccounts) #ig handles should be in A column

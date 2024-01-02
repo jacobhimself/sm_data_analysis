@@ -7,7 +7,7 @@ I ran the script slightly different to how instaloader suggests.
 2: Retrieve the cookie file. In my version of Ubuntu this was stored in /home/jacob/snap/firefox/common/.mozilla/firefox/70luzall.default/cookies.sqlite
 3: Store the cookie file in the same folder as this script
 4. I have added the additional filepath for Ubuntu to the get_cookiefile function
-5: Run the file with the terminal command: python3 615_import_firefox_session.py -c cookies.sqlite
+5: Run the file with the terminal command: python3 403_error_login_workaround.py -c cookies.sqlite
 6: This creates a session file that can then be loaded by instaloader. For me the file was in /home/jacob/.config/instaloader
 7: Then in the actual instaloader script, use the following code
     USER = "your_account_name_here"

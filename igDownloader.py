@@ -89,5 +89,6 @@ def main():
 
     # Loop through instagram handles and add follower counts to Google Sheet
     retrieveIgFollowers(newLoader)
-    
-main()
+
+if __name__ == "__main__":    
+    main()
