@@ -57,6 +57,7 @@ class igPostRecord:
     postSponsors = []
     postHashtags = []
     postAccountTags = []
+    postCaption = ""
 
     def __str__(self):
         string=(
@@ -70,7 +71,8 @@ class igPostRecord:
             str(self.postIsSponsored) + "," +
             str(self.postSponsors) + "," +
             str(self.postHashtags) + "," +
-            str(self.postAccountTags) + ","
+            str(self.postAccountTags) + "," +
+            self.postCaption
         )
         return string
     
@@ -87,7 +89,8 @@ class igPostRecord:
             str(self.postIsSponsored),
             str(self.postSponsors),
             str(self.postHashtags),
-            str(self.postAccountTags)
+            str(self.postAccountTags),
+            str(self.postCaption)
             ]
         )
 
@@ -199,6 +202,7 @@ def populateIgPostRecordList(ridersToRecord, sheetObject):
             record.postIsSponsored = post.sponsor_users
             record.postHashtags = str(post.caption_hashtags)
             record.postAccountTags = str(post.tagged_users)
+            record.postCaption = post.caption
             # recordList.append
 # //////// Instead of appending I am going to try post directly to sheet
             # This is due to the liability of keeping the data in memory when the program is susceptible to crashing because of ig limits
