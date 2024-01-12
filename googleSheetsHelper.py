@@ -100,7 +100,7 @@ def getIgAccountNamesFromRiderSheet(sheetObject, numAccounts = 100):
     
 def getIgAccountNamesFromNamedSheet(sheetObject, numAccounts = 100, sheetName="Riders"):
     # Return a list that contains the number of instragram account handles specified
-    accountRange = sheetName + "!A2:A" + str(numAccounts) #ig handles should be in A column
+    accountRange = sheetName + "!A2:A" + str(numAccounts+1) #ig handles should be in A column
     try:
         result = (
             sheetObject.spreadsheets()

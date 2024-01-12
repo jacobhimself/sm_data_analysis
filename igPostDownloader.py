@@ -121,6 +121,23 @@ def sortRiderSheetByLastUpdated(serviceObject):
     res = serviceObject.spreadsheets().batchUpdate(body=requests, spreadsheetId=masterSheetId).execute()
 
 
+def setlastIgPostUpdate(listIndex, sheetObject):
+    # Set the time that the video record was updated
+    cellToUpdate = "Riders!E" + str(listIndex) # lastIgPostUpdate should be in column E of Riders sheet
+    body = {
+        'values' : [
+            [str(date.today())]
+        ]
+    }
+    try:
+        response = sheetObject.spreadsheets().values().update(
+            spreadsheetId = masterSheetId, 
+            range = cellToUpdate, 
+            body = body,
+            valueInputOption = 'RAW').execute()
+    except HttpError as e:
+        print(e)
+
 # Use instaloader module to retrieve follower data, save the data in follower_files/"todaysFile"
 def loadIgSession():
     # Retrieve existing session so that Instagram IP address check is bypassed
@@ -175,7 +192,7 @@ def updateIgPostRecordsSheet(firstEmptyRow, sheetObject, newIgRecord):
 
 def populateIgPostRecordList(ridersToRecord, sheetObject):
     recordList = []
-    count = 0
+    ridersheetRow = 2
     dateAfter = datetime.today() - timedelta(days=(1*365)) # Search for videos in last year
     igLoader = loadIgSession()
 
@@ -183,12 +200,18 @@ def populateIgPostRecordList(ridersToRecord, sheetObject):
     for rider in ridersToRecord:
         igProfile = instaloader.Profile.from_username(igLoader.context, rider[0])
         print("Retrieving posts for " + rider[0])
-        count = 0
+        riderPostCount = 0
 
         # loop through posts for rider #########
         for post in igProfile.get_posts():
             #post.date is datetime
-            if ((post.date < dateAfter) and count > 10):
+            # if ((post.date < dateAfter) and riderPostCount > 10):
+            startDate = datetime(year = 2023, month = 1, day = 1)
+            endDate = datetime(year = 2023, month = 12, day = 31)
+            if(((post.date > endDate))): # and riderPostCount > 10):
+                print("skipped " + str(post.date))
+                continue
+            if(post.date < startDate):
                 break
             record = igPostRecord()
             record.postAccount = rider[0]
@@ -199,7 +222,7 @@ def populateIgPostRecordList(ridersToRecord, sheetObject):
                 record.videoViewCount = post.video_view_count
             record.postLikes = post.likes
             record.postComments = post.comments
-            record.postIsSponsored = post.sponsor_users
+            # record.postIsSponsored = post.sponsor_users
             record.postHashtags = str(post.caption_hashtags)
             record.postAccountTags = str(post.tagged_users)
             record.postCaption = post.caption
@@ -209,11 +232,16 @@ def populateIgPostRecordList(ridersToRecord, sheetObject):
             
             firstEmptyRow = getFirstEmptyRow(sheetObject, "igPostDb")
             updateIgPostRecordsSheet(firstEmptyRow, sheetObject, record)
-            print("post added to sheet")
-            count += 1
+            print("post added to sheet from " + str(post.date))
+            riderPostCount += 1
         
+        setlastIgPostUpdate(ridersheetRow,sheetObject)
+        ridersheetRow += 1
+        print("sleeping from 2-4 minutes")
         time.sleep(random.uniform(120,240))
             # print(post.shortcode)
+        
+
             
     return 0
 
@@ -225,7 +253,7 @@ def main():
     # Get a list of accounts to get posts for, first sorting by last updated igFollowers
     googleSheetsHelper.sortRiderSheetByLastIgPostUpdate(googleSheet)
     # igAccountsToTrack = googleSheetsHelper.getIgAccountNamesFromNamedSheet(googleSheet,46, "FoxTeam")
-    numAccounts = 1
+    numAccounts = 50
     igAccountsToTrack = googleSheetsHelper.getIgAccountNamesFromNamedSheet(googleSheet,numAccounts, "Riders")
 
 
