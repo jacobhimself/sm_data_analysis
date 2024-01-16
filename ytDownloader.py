@@ -42,7 +42,7 @@ masterSheetId = "1zyWCq_QgFe8xkCwxULzovpS4LSmIGczoEBZXVCyCKlM"
 keyFileLocation = os.path.dirname(os.path.realpath(__file__)) + '/cloud_service_account_key.json'
 dateAsString = str(date.today())
 
-numYoutubeSearches = 50
+numYoutubeSearches = 31
 
 
 class YtVideoRecord:
@@ -103,13 +103,13 @@ def getGoogleSheet(api_name, api_version, scopes, key_file_location):
     service = build(api_name, api_version, credentials=creds)
     return service
 
-def getFirst50SearchTerms(serviceObject):
+def getSearchTerms(serviceObject, numSearches):
     try:
-        lastRow = str(1 + numYoutubeSearches)
+        lastRow = str(1 + numSearches)
         result = (
             serviceObject.spreadsheets()
             .values()
-            .get(spreadsheetId=masterSheetId, range="Riders!B2:B" + lastRow)
+            .get(spreadsheetId=masterSheetId, range="Riders!B2:G" + lastRow) # Column G contains the sport column, this is used to search for name + sport in YouTube search
             .execute()
         )
         rows = result.get("values", [])
@@ -165,7 +165,7 @@ def populateVideoRecordList(searchTermList):
             URL = "https://www.googleapis.com/youtube/v3/search"
             PARAMS = {
                 "key": youtubeApiKey,
-                "q": str(rider[0]) + " bmx",
+                "q": str(rider[0]) + " " + str(rider[5]),
                 "type":"video",
                 "part":"snippet",
                 "maxResults":50,
@@ -303,8 +303,8 @@ def main():
     
     googleSheetObject = getGoogleSheet(sheetsApi, sheetsApiVersion, [], keyFileLocation)
     sortRiderSheetByLastUpdated(googleSheetObject)
-    # searchTerms = getFirst50SearchTerms(googleSheetObject)["values"] #searchTerms is a list
-    searchTerms = getFirst50SearchTerms(googleSheetObject) #searchTerms is a list
+    # searchTerms = getSearchTerms(googleSheetObject)["values"] #searchTerms is a list
+    searchTerms = getSearchTerms(googleSheetObject, numYoutubeSearches) #searchTerms is a list
 
 
     # Populate Video Record list via Youtube API
