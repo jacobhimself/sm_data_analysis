@@ -134,7 +134,7 @@ def setlastIgPostUpdate(listIndex, sheetObject):
             spreadsheetId = masterSheetId, 
             range = cellToUpdate, 
             body = body,
-            valueInputOption = 'RAW').execute()
+            valueInputOption = 'USER_ENTERED').execute()
     except HttpError as e:
         print(e)
 

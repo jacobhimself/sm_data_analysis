@@ -42,7 +42,7 @@ masterSheetId = "1zyWCq_QgFe8xkCwxULzovpS4LSmIGczoEBZXVCyCKlM"
 keyFileLocation = os.path.dirname(os.path.realpath(__file__)) + '/cloud_service_account_key.json'
 dateAsString = str(date.today())
 
-numYoutubeSearches = 31
+numYoutubeSearches = 1
 
 
 class YtVideoRecord:
@@ -150,13 +150,14 @@ def sortRiderSheetByLastUpdated(serviceObject):
 def populateVideoRecordList(searchTermList):
     recordList = []
     count = 0
-    dateAfter = date.today() - timedelta(days=(10* 365)) # Search for videos in last ten years
-    dateAfter = (datetime.now(timezone.utc) - timedelta(10*365)).isoformat()
+    # dateAfter = date.today() - timedelta(days=(10* 365)) # Search for videos in last ten years
+    dateAfter = (datetime.now(timezone.utc) - timedelta(5*365)).isoformat()
 
-    # iterate through  list of search terms. Based on usage in main() this should be 50 terms
-    # For each search term, there will be 50 results from the youtube search.
-    # For 50 search terms, this should use 7500 out of 10,000 available API credits
+    # iterate through  list of search terms.
+    # Each search term will return up to 50 results from the youtube search.
+    # 
     # Searches are worth 100 credits, individual video data is worth 1 credit
+    # For 50 search terms, this should use 7500 out of 10,000 available API credits
     for rider in searchTermList:
         if count < numYoutubeSearches:
             print(count)
@@ -165,13 +166,14 @@ def populateVideoRecordList(searchTermList):
             URL = "https://www.googleapis.com/youtube/v3/search"
             PARAMS = {
                 "key": youtubeApiKey,
-                "q": str(rider[0]) + " " + str(rider[5]),
+                # "q": str(rider[0]),
+                "q": str(rider[0]) + " " + str(rider[5]), # rider [5] is adding the "sport" column to the search. For example, "Chase Hawk" + "BMX"
                 "type":"video",
                 "part":"snippet",
                 "maxResults":50,
-                # "order":"relevance"
+                # "order":"relevance",
                 "order":"viewCount",
-                # "publishedAfter": str(dateAfter)
+                "publishedAfter": str(dateAfter)
             }
 
             r = requests.get(url = URL, params = PARAMS)
@@ -242,7 +244,7 @@ def setlastVideoRecordUpdate(listIndex, sheetObject):
             spreadsheetId = masterSheetId, 
             range = cellToUpdate, 
             body = body,
-            valueInputOption = 'RAW').execute()
+            valueInputOption = 'USER_ENTERED').execute()
     except HttpError as e:
         print(e)
 
@@ -271,7 +273,7 @@ def updateVideoRecordsSheet(firstEmptyRow, sheetObject, newVideoRecords):
                 spreadsheetId = masterSheetId, 
                 range = rowToUpdate, 
                 body = body,
-                valueInputOption = 'RAW').execute()
+                valueInputOption = 'USER_ENTERED').execute()
         except HttpError as e:
             print(e)
 

@@ -46,7 +46,8 @@ def retrieveIgFollowers(igSession):
     sortRiderSheetByLastIgFollowerUpdate(googleSheetObject)
 
     # Create a list of ig accounts you want the number of followers of
-    igAccounts = getIgAccountNamesFromRiderSheet(googleSheetObject)
+    numAccounts = 1
+    igAccounts = getIgAccountNamesFromRiderSheet(googleSheetObject, numAccounts)
 
     #Get the index for todays column
     todaysColIndex = getTodaysColumnIndex(googleSheetObject)

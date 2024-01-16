@@ -83,7 +83,7 @@ def sortRiderSheetByLastIgPostUpdate(serviceObject):
 
 def getIgAccountNamesFromRiderSheet(sheetObject, numAccounts = 100):
     # Return a list that contains the number of instragram account handles specified
-    accountRange = "Riders!A2:A" + str(numAccounts) #ig handles should be in A column
+    accountRange = "Riders!A2:A" + str(numAccounts + 1) #ig handles should be in A column
     try:
         result = (
             sheetObject.spreadsheets()
@@ -201,7 +201,7 @@ def setFollowerCountFromListPos(listIndex, colIndex, sheetObject, followerCount)
             spreadsheetId = masterSheetId, 
             range = cellToUpdate, 
             body = body,
-            valueInputOption = 'RAW').execute()
+            valueInputOption = 'USER_ENTERED').execute()
     except HttpError as e:
         print(e)
     # print("Added the following list, col, follower:" + str(listIndex) + colIndex + str(followerCount))
@@ -219,6 +219,6 @@ def setlastIgFollowerUpdate(listIndex, sheetObject):
             spreadsheetId = masterSheetId, 
             range = cellToUpdate, 
             body = body,
-            valueInputOption = 'RAW').execute()
+            valueInputOption = 'USER_ENTERED').execute()
     except HttpError as e:
         print(e)
