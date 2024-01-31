@@ -42,7 +42,7 @@ masterSheetId = "1zyWCq_QgFe8xkCwxULzovpS4LSmIGczoEBZXVCyCKlM"
 keyFileLocation = os.path.dirname(os.path.realpath(__file__)) + '/cloud_service_account_key.json'
 dateAsString = str(date.today())
 
-numYoutubeSearches = 1
+numYoutubeSearches = 7
 
 
 class YtVideoRecord:

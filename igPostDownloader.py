@@ -193,7 +193,6 @@ def updateIgPostRecordsSheet(firstEmptyRow, sheetObject, newIgRecord):
 def populateIgPostRecordList(ridersToRecord, sheetObject):
     recordList = []
     ridersheetRow = 2
-    dateAfter = datetime.today() - timedelta(days=(1*365)) # Search for videos in last year
     igLoader = loadIgSession()
 
     # loop through all riders #######
@@ -205,13 +204,13 @@ def populateIgPostRecordList(ridersToRecord, sheetObject):
         # loop through posts for rider #########
         for post in igProfile.get_posts():
             #post.date is datetime
-            # if ((post.date < dateAfter) and riderPostCount > 10):
-            startDate = datetime(year = 2023, month = 1, day = 1)
-            endDate = datetime(year = 2023, month = 12, day = 31)
+            startDate = datetime(year = 2021, month = 1, day = 1)
+            endDate = datetime(year = 2022, month = 12, day = 31)
             if(((post.date > endDate))): # and riderPostCount > 10):
                 print("skipped " + str(post.date))
                 continue
-            if(post.date < startDate):
+            if((post.date < startDate) and (riderPostCount > 10)): 
+                print("Reached lower post date for " + rider[0] + ". Last post date is " + str(post.date) + " and min date bound is " + str(startDate))
                 break
             record = igPostRecord()
             record.postAccount = rider[0]
@@ -232,7 +231,7 @@ def populateIgPostRecordList(ridersToRecord, sheetObject):
             
             firstEmptyRow = getFirstEmptyRow(sheetObject, "igPostDb")
             updateIgPostRecordsSheet(firstEmptyRow, sheetObject, record)
-            print("post added to sheet from " + str(post.date))
+            print(str(rider[0]) + ": post added to sheet from " + str(post.date))
             riderPostCount += 1
         
         setlastIgPostUpdate(ridersheetRow,sheetObject)
@@ -253,7 +252,7 @@ def main():
     # Get a list of accounts to get posts for, first sorting by last updated igFollowers
     googleSheetsHelper.sortRiderSheetByLastIgPostUpdate(googleSheet)
     # igAccountsToTrack = googleSheetsHelper.getIgAccountNamesFromNamedSheet(googleSheet,46, "FoxTeam")
-    numAccounts = 50
+    numAccounts = 19
     igAccountsToTrack = googleSheetsHelper.getIgAccountNamesFromNamedSheet(googleSheet,numAccounts, "Riders")
 
 
